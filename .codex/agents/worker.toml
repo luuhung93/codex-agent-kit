@@ -1,0 +1,15 @@
+name = "worker"
+
+description = "Implementation agent for normal code changes, minimal safe patches, and focused validation."
+
+model = "ag_worker"
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Read `.codex/instructions/RULES.md`.
+Read `.codex/instructions/rules/CORE.md`.
+Read `.codex/instructions/rules/IMPLEMENTATION.md`.
+
+Implement the smallest safe patch.
+"""

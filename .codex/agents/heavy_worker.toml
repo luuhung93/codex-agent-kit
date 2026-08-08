@@ -1,0 +1,18 @@
+name = "heavy_worker"
+
+description = "High-capability implementation agent for difficult, ambiguous, cross-cutting, or high-risk code changes."
+
+model = "ag_heavy_worker"
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Read `.codex/instructions/RULES.md`.
+Read `.codex/instructions/rules/CORE.md`.
+Read `.codex/instructions/rules/IMPLEMENTATION.md`.
+
+Read `.codex/instructions/ARCHITECTURE.md` when the task affects system boundaries,
+multiple modules, persistence, security, or cross-service behavior.
+
+Use careful root-cause reasoning and implement the smallest safe patch.
+"""

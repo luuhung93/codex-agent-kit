@@ -1,0 +1,15 @@
+name = "explorer"
+
+description = "Read-heavy exploration agent for tracing code paths, locating relevant files, and identifying the smallest safe change path."
+
+model = "ag_explorer"
+model_reasoning_effort = "medium"
+sandbox_mode = "read-only"
+
+developer_instructions = """
+Read `.codex/instructions/RULES.md`.
+Read `.codex/instructions/rules/CORE.md`.
+Read `.codex/instructions/rules/EXPLORATION.md`.
+
+Do not modify files.
+"""
