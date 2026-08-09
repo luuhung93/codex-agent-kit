@@ -2,7 +2,7 @@ name = "planner"
 
 description = "Planning agent for turning repository evidence and requirements into a minimal implementation plan."
 
-model = "ag_planner"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 

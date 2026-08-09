@@ -4,17 +4,15 @@ Reusable Codex multi-agent configuration for 9Router combo models.
 
 ## Agents
 
-| Agent | 9Router combo | Model | Reasoning | Write access | Usage |
-| --- | --- | --- | --- | --- | --- |
-| `explorer` | `ag_explorer` | Terra | medium | No | Reads repositories well with balanced cost and quality |
-| `planner` | `ag_planner` | Terra | high | No | Planning benefits from stronger reasoning than Luna |
-| `worker` | `ag_worker` | Luna | high | Yes | Very cost-effective for most implementation tasks |
-| `reviewer` | `ag_reviewer` | Luna | high | No | Economical for routine independent reviews |
-| `heavy_worker` | `ag_heavy_worker` | Sol | high | Yes | Difficult bugs, architecture, and security work |
+| Agent | Model | Reasoning | Write access | Usage |
+| --- | --- | --- | --- | --- |
+| `explorer` | `gpt-5.6-sol` | high | No | Repository tracing and discovery |
+| `planner` | `gpt-5.6-sol` | high | No | Evidence-based planning |
+| `worker` | `gpt-5.6-sol` | high | Yes | Normal implementation tasks |
+| `heavy_worker` | `gpt-5.6-sol` | high | Yes | Difficult or high-risk tasks |
+| `reviewer` | `gpt-5.6-sol` | high | No | Independent final review |
 
-Each agent uses its own 9Router combo. No agent shares another role's combo model.
-
-Escalate high-risk reviews to Sol with high reasoning only when the change involves security, authentication, payments, migrations, concurrency, data integrity, architecture, or broad cross-module behavior.
+All agents use the same 9Router combo `gpt-5.6-sol`. Differentiation is by role instructions and sandbox mode, not model.
 
 ## Suggested flows
 
