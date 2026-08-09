@@ -4,15 +4,13 @@ Reusable Codex multi-agent configuration for 9Router combo models.
 
 ## Agents
 
-| Agent | Model | Reasoning | Write access | Usage |
+| Agent | 9Router combo | Reasoning | Write access | Usage |
 | --- | --- | --- | --- | --- |
-| `explorer` | `gpt-5.6-sol` | high | No | Repository tracing and discovery |
-| `planner` | `gpt-5.6-sol` | high | No | Evidence-based planning |
-| `worker` | `gpt-5.6-sol` | high | Yes | Normal implementation tasks |
-| `heavy_worker` | `gpt-5.6-sol` | high | Yes | Difficult or high-risk tasks |
-| `reviewer` | `gpt-5.6-sol` | high | No | Independent final review |
-
-All agents use the same 9Router combo `gpt-5.6-sol`. Differentiation is by role instructions and sandbox mode, not model.
+| `explorer` | `9r-terra` | medium | No | Repository tracing and discovery |
+| `planner` | `9r-terra` | high | No | Evidence-based planning |
+| `worker` | `9r-luna` | high | Yes | Normal implementation tasks |
+| `heavy_worker` | `9r-sol` | high | Yes | Difficult or high-risk tasks |
+| `reviewer` | `9r-luna` | high | No | Independent final review |
 
 ## Suggested flows
 
