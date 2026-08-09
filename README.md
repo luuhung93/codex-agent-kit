@@ -21,6 +21,11 @@ AGENTS.md
 CLAUDE.md
 .agents/
 ├── agent
+├── lib/
+│   ├── runtime.sh
+│   ├── hosts.sh
+│   ├── worktree.sh
+│   └── self-test.sh
 ├── rules/
 │   ├── CORE.md
 │   ├── EXPLORE.md
@@ -47,16 +52,18 @@ export OPENCODE_9ROUTER_PROVIDER=my-provider
 
 ## Install From Release
 
-Download `agent-workflow-kit-v2.0.0.zip` from GitHub Releases and extract its contents into the root of your project.
+Download `agent-workflow-kit-v2.1.0.zip` from GitHub Releases and extract its contents into the root of your project.
 
 ```bash
-unzip agent-workflow-kit-v2.0.0.zip -d /tmp/agent-workflow-kit
-cp -R /tmp/agent-workflow-kit/agent-workflow-kit-v2.0.0/. /path/to/my-project/
+unzip agent-workflow-kit-v2.1.0.zip -d /tmp/agent-workflow-kit
+cp -R /tmp/agent-workflow-kit/agent-workflow-kit-v2.1.0/. /path/to/my-project/
 cd /path/to/my-project
 .agents/agent self-test
 ```
 
 The extraction command copies dotfiles such as `.agents/`.
+
+`.agents/agent` remains the only public command. Files under `.agents/lib/` are internal modules sourced relative to the entrypoint, so no installation or shell path configuration is required.
 
 ## Roles
 
