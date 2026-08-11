@@ -41,6 +41,15 @@ main() {
   require_command git
   local command=${1:-}
   case $command in
+    -h|--help|help|'') ;;
+    self-test)
+      check_installation_visibility strict || die "fix ignored kit files before running self-test"
+      ;;
+    *)
+      check_installation_visibility warn
+      ;;
+  esac
+  case $command in
     explorer|planner|worker|heavy_worker)
       shift
       (($#)) || die "$command requires a task"

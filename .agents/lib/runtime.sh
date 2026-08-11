@@ -7,6 +7,47 @@ project_root() {
     die "install the kit inside a Git repository"
 }
 
+required_kit_files() {
+  cat <<'EOF'
+.agents/agent
+.agents/lib/runtime.sh
+.agents/lib/hosts.sh
+.agents/lib/worktree.sh
+.agents/lib/self-test.sh
+.agents/rules/CORE.md
+.agents/rules/EXPLORE.md
+.agents/rules/PLAN.md
+.agents/rules/IMPLEMENT.md
+.agents/rules/REVIEW.md
+AGENTS.md
+CLAUDE.md
+EOF
+}
+
+check_installation_visibility() {
+  local mode=${1:-warn} root file ignored=false
+  root="$(project_root)"
+  while IFS= read -r file; do
+    [[ -e $root/$file ]] || die "required kit file is missing: $file"
+    if ! git -C "$root" ls-files --error-unmatch -- "$file" >/dev/null 2>&1 &&
+      git -C "$root" check-ignore -q -- "$file"; then
+      printf 'agent: required kit file is ignored by Git: %s\n' "$file" >&2
+      ignored=true
+    fi
+  done < <(required_kit_files)
+
+  if [[ $ignored == true ]]; then
+    cat >&2 <<'EOF'
+agent: required kit files are ignored by Git.
+Add rules like these after the conflicting ignore rule:
+  !/.agents/
+  !/.agents/lib/
+  !/.agents/lib/**
+EOF
+    [[ $mode != strict ]]
+  fi
+}
+
 ensure_runs_ignored() {
   local root=$1 exclude pattern='/.agents/runs/*' keep='!/.agents/runs/.gitkeep'
   exclude="$(git -C "$root" rev-parse --git-path info/exclude)"
@@ -124,8 +165,31 @@ ${target_diff:+- Review target diff artifact: $target_diff}
 EOF
 }
 
+workspace_context() {
+  local role=$1 status=$2 base=$3
+  if role_is_write "$role"; then
+    cat <<EOF
+Workspace isolation:
+- This write role runs in a detached worktree created from commit $base.
+- Uncommitted changes from the main workspace are not present in the isolated worktree.
+EOF
+    if [[ -n $status ]]; then
+      printf '%s\n%s\n' '- Main workspace changes excluded from this worktree:' "$status"
+    fi
+  else
+    cat <<EOF
+Workspace visibility:
+- This read-only role runs in the main workspace.
+- Inspect the current filesystem, including uncommitted tracked and untracked files; do not rely only on committed HEAD.
+EOF
+    if [[ -n $status ]]; then
+      printf '%s\n%s\n' '- Current main workspace status:' "$status"
+    fi
+  fi
+}
+
 run_role() {
-  local role=$1 task=$2 root host model sandbox rule run_id run_dir cwd base prompt status=0
+  local role=$1 task=$2 root host model sandbox rule run_id run_dir cwd base prompt prompt_task status=0 main_status context
   root="$(project_root)"
   ensure_runs_ignored "$root"
   host="${AGENT_HOST:-codex}"
@@ -135,16 +199,23 @@ run_role() {
   run_id="$(new_run_id "$role")"
   run_dir="$RUNS_DIR/$run_id"
   base="$(git -C "$root" rev-parse HEAD)"
+  main_status="$(git -C "$root" status --short --untracked-files=all)"
+  context="$(workspace_context "$role" "$main_status" "$base")"
   cwd=$root
   mkdir -p "$run_dir"
   : >"$run_dir/review.md"
 
   if role_is_write "$role"; then
+    if [[ -n $main_status ]]; then
+      printf 'agent: warning: main workspace is dirty; %s starts from %s and excludes those changes.\n' \
+        "$role" "$base" >&2
+    fi
     cwd="$(create_worktree "$root" "$run_id" "$base")"
   fi
 
   write_meta "$run_dir/run.meta" "$role" "$host" "$model" "$sandbox" "$cwd" "$base" '' "$role"
-  prompt="$(build_prompt "$role" "$task" "$rule")"
+  prompt_task="$task"$'\n\n'"$context"
+  prompt="$(build_prompt "$role" "$prompt_task" "$rule")"
 
   printf 'RUN_ID=%s\nHOST=%s\nMODEL=%s\nCWD=%s\n' "$run_id" "$host" "$model" "$cwd"
   run_host "$host" "$role" "$model" "$sandbox" "$cwd" "$prompt" "$run_dir" || status=$?

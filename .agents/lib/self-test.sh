@@ -1,14 +1,38 @@
 self_test() (
   require_command git
-  local temp project fake_bin run_id followup_id worktree host
+  local temp project ignored_project fake_bin run_id followup_id worktree worker_cwd host read_context write_context
   temp="$(mktemp -d)"
   trap 'rm -rf "$temp"' EXIT
   project="$temp/project"
+  ignored_project="$temp/ignored-project"
   fake_bin="$temp/bin"
+
+  read_context="$(workspace_context explorer $' M tracked.txt\n?? new.txt' abc123)"
+  write_context="$(workspace_context worker $' M tracked.txt\n?? new.txt' abc123)"
+  [[ $read_context == *'Inspect the current filesystem'* && $read_context == *'new.txt'* ]]
+  [[ $write_context == *'not present in the isolated worktree'* && $write_context == *'abc123'* ]]
+
+  mkdir -p "$ignored_project/.agents/lib" "$ignored_project/.agents/rules" "$ignored_project/.agents/runs"
+  cp "$SCRIPT_PATH" "$ignored_project/.agents/agent"
+  cp "$AGENTS_DIR"/lib/*.sh "$ignored_project/.agents/lib/"
+  cp "$AGENTS_DIR"/rules/*.md "$ignored_project/.agents/rules/"
+  cp "$AGENTS_DIR/../AGENTS.md" "$AGENTS_DIR/../CLAUDE.md" "$ignored_project/"
+  touch "$ignored_project/.agents/runs/.gitkeep"
+  printf 'lib/\n' >"$ignored_project/.gitignore"
+  (
+    cd "$ignored_project"
+    git init -q
+    if .agents/agent self-test >ignored.out 2>&1; then
+      exit 1
+    fi
+    grep -Fq 'required kit files are ignored by Git' ignored.out
+  )
+
   mkdir -p "$project/.agents/lib" "$project/.agents/rules" "$project/.agents/runs" "$fake_bin"
   cp "$SCRIPT_PATH" "$project/.agents/agent"
   cp "$AGENTS_DIR"/lib/*.sh "$project/.agents/lib/"
   cp "$AGENTS_DIR"/rules/*.md "$project/.agents/rules/"
+  cp "$AGENTS_DIR/../AGENTS.md" "$AGENTS_DIR/../CLAUDE.md" "$project/"
   touch "$project/.agents/runs/.gitkeep"
   cat >"$fake_bin/fake-agent-cli" <<'EOF'
 #!/usr/bin/env bash
@@ -52,10 +76,14 @@ EOF
     for host in codex claude agy opencode; do
       PATH="$fake_bin:$PATH" AGENT_HOST="$host" .agents/agent explorer 'inspect only' >/dev/null
     done
-    PATH="$fake_bin:$PATH" AGENT_HOST=codex .agents/agent worker 'create agent-change.txt' >/dev/null
+    printf 'uncommitted main file\n' >pending-main.txt
+    PATH="$fake_bin:$PATH" AGENT_HOST=codex .agents/agent worker 'create agent-change.txt' >/dev/null 2>worker.err
+    grep -Fq 'main workspace is dirty' worker.err
     [[ ! -e agent-change.txt ]]
     run_id="$(find .agents/runs -mindepth 1 -maxdepth 1 -type d -name '*-worker*' -exec basename {} \; | head -1)"
     [[ -n $run_id && -s .agents/runs/$run_id/changes.patch ]]
+    worker_cwd="$(awk -F '\t' '$1 == "cwd" {print $2}' .agents/runs/$run_id/run.meta)"
+    [[ ! -e $worker_cwd/pending-main.txt ]]
     PATH="$fake_bin:$PATH" AGENT_HOST=codex .agents/agent reviewer "$run_id" >/dev/null
     [[ -s .agents/runs/$run_id/review.md ]]
     PATH="$fake_bin:$PATH" AGENT_HOST=claude .agents/agent followup "$run_id" 'Fix the remaining test failure' >/dev/null

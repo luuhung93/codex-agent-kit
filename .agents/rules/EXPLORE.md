@@ -7,3 +7,5 @@
 - Identify current behavior, likely root cause, regression risks, and the smallest safe change path.
 - Report concrete file paths and symbols.
 - Separate verified findings from hypotheses.
+- Prefer several short shell commands over one command with nested quoting, long regexes, or complex loops.
+- When a combined query becomes hard to quote safely, split it into simple `rg` calls or write a temporary read-only script.

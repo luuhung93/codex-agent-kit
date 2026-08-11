@@ -52,11 +52,11 @@ export OPENCODE_9ROUTER_PROVIDER=my-provider
 
 ## Install From Release
 
-Download `agent-workflow-kit-v2.1.0.zip` from GitHub Releases and extract its contents into the root of your project.
+Download `agent-workflow-kit-v2.1.1.zip` from GitHub Releases and extract its contents into the root of your project.
 
 ```bash
-unzip agent-workflow-kit-v2.1.0.zip -d /tmp/agent-workflow-kit
-cp -R /tmp/agent-workflow-kit/agent-workflow-kit-v2.1.0/. /path/to/my-project/
+unzip agent-workflow-kit-v2.1.1.zip -d /tmp/agent-workflow-kit
+cp -R /tmp/agent-workflow-kit/agent-workflow-kit-v2.1.1/. /path/to/my-project/
 cd /path/to/my-project
 .agents/agent self-test
 ```
@@ -64,6 +64,25 @@ cd /path/to/my-project
 The extraction command copies dotfiles such as `.agents/`.
 
 `.agents/agent` remains the only public command. Files under `.agents/lib/` are internal modules sourced relative to the entrypoint, so no installation or shell path configuration is required.
+
+### Git Ignore Preflight
+
+Some projects contain a generic rule such as `lib/`, which can accidentally ignore `.agents/lib/*.sh` after extracting the ZIP. `.agents/agent self-test` now fails clearly when required untracked kit files are ignored by Git.
+
+Add exceptions after the conflicting rule:
+
+```gitignore
+!/.agents/
+!/.agents/lib/
+!/.agents/lib/**
+```
+
+Run the check again before committing the kit:
+
+```bash
+.agents/agent self-test
+git status --short --untracked-files=all
+```
 
 ## Roles
 
@@ -111,6 +130,10 @@ Implement in an isolated detached worktree:
 .agents/agent worker "Implement the authentication fix"
 .agents/agent heavy_worker "Fix the concurrency race"
 ```
+
+Read-only roles run in the main workspace and are instructed to inspect current tracked and untracked files, not only committed `HEAD`.
+
+Write roles always start from committed `HEAD`. If the main workspace is dirty, the engine prints a warning and includes the excluded file list in the agent prompt. Those uncommitted changes are intentionally not copied into the isolated worktree.
 
 Each command prints a `RUN_ID`. Inspect and review a write run:
 
@@ -183,6 +206,16 @@ Git + worktree + rules + artifacts
 ```
 
 Hidden conversation memory is disposable and never required to continue work.
+
+## Known Host Warnings
+
+Codex may print this warning for 9Router aliases:
+
+```text
+Model metadata for `9r-terra` not found. Defaulting to fallback metadata.
+```
+
+The warning is informational when the requested alias still runs successfully. The kit does not use Codex native `multi_agent_v1` role dispatch, so native role availability, reasoning metadata, and provider-credential failures are outside this workflow. `.agents/agent` invokes the selected host directly and persists its own artifacts.
 
 ## Safety Model
 
